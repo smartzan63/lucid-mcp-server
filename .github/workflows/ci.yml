@@ -48,15 +48,20 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
-    - name: Use Node.js 22.x
+    # npm docs recipe for trusted publishing: Node 24 (bundles npm >= 11.5.1,
+    # and fixes the Node 22 OIDC auth bug), registry-url set, and caching
+    # disabled for release builds.
+    - name: Use Node.js 24
       uses: actions/setup-node@v6
       with:
-        node-version: '22.x'
-        cache: 'npm'
+        node-version: '24'
+        registry-url: 'https://registry.npmjs.org'
+        package-manager-cache: false
 
-    # Trusted publishing (OIDC) needs npm >= 11.5.1; upgrade the bundled CLI.
-    - name: Upgrade npm
-      run: npm install -g npm@latest
+    - name: Show tool versions
+      run: |
+        echo "node: $(node --version)"
+        echo "npm:  $(npm --version)"
 
     - name: Install dependencies
       run: npm ci
@@ -64,9 +69,8 @@ jobs:
     - name: Build project
       run: npm run build
 
-    # No registry-url / NODE_AUTH_TOKEN: setting registry-url makes setup-node
-    # write a placeholder _authToken into .npmrc, which blocks the OIDC token
-    # exchange. Without it, npm authenticates the publish via trusted publishing
-    # (configured on npmjs.com for this repo + workflow). Provenance is automatic.
+    # Auth is OIDC trusted publishing (configured on npmjs.com for repo
+    # smartzan63/lucid-mcp-server, workflow ci.yml). NODE_AUTH_TOKEN must stay
+    # unset or npm uses it instead of OIDC. Provenance is automatic.
     - name: Publish to NPM
-      run: npm publish --provenance --access public
+      run: npm publish
