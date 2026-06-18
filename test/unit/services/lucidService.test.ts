@@ -230,7 +230,7 @@ describe('LucidService', () => {
       const service = new LucidService();
       
       const mockDocumentContent = {
-        id: '8077d744-2b83-4f07-bde3-f2b1d9a0df65',
+        id: 'example-doc-id',
         title: 'Test Document',
         product: 'lucidchart',
         pages: [
@@ -242,11 +242,11 @@ describe('LucidService', () => {
       const mockGetDocumentContent = vi.fn().mockResolvedValue({ data: mockDocumentContent });
       (service as any).sdk = { getDocumentContent: mockGetDocumentContent };
 
-      const result = await service.getDocumentContent('8077d744-2b83-4f07-bde3-f2b1d9a0df65');
+      const result = await service.getDocumentContent('example-doc-id');
 
       expect(result).toEqual(mockDocumentContent);
       expect(mockGetDocumentContent).toHaveBeenCalledWith({
-        id: '8077d744-2b83-4f07-bde3-f2b1d9a0df65',
+        id: 'example-doc-id',
         'Lucid-Api-Version': '1'
       });
     });

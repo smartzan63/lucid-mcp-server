@@ -1,9 +1,5 @@
 # Smithery configuration file: https://smithery.ai/docs/build/project-config
 
-runtime: "container"
-build:
-  dockerfile: "Dockerfile"
-  dockerBuildPath: "."
 startCommand:
   type: stdio
   commandFunction:
@@ -12,15 +8,9 @@ startCommand:
     (config) => ({
       command: 'node',
       args: ['build/index.js'],
-      env: Object.assign(
-        {},
-        { LUCID_API_KEY: config.lucidApiKey },
-        config.azureOpenaiApiKey ? { AZURE_OPENAI_API_KEY: config.azureOpenaiApiKey } : {},
-        config.azureOpenaiEndpoint ? { AZURE_OPENAI_ENDPOINT: config.azureOpenaiEndpoint } : {},
-        config.azureOpenaiDeploymentName ? { AZURE_OPENAI_DEPLOYMENT_NAME: config.azureOpenaiDeploymentName } : {},
-        config.openaiApiKey ? { OPENAI_API_KEY: config.openaiApiKey } : {},
-        config.openaiModel ? { OPENAI_MODEL: config.openaiModel } : {}
-      )
+      env: {
+        LUCID_API_KEY: config.lucidApiKey
+      }
     })
   configSchema:
     # JSON Schema defining the configuration options for the MCP.
@@ -29,27 +19,7 @@ startCommand:
       - lucidApiKey
     properties:
       lucidApiKey:
-          type: string
-          description: Lucid API Key
-      azureOpenaiApiKey:
-          type: string
-          description: Azure OpenAI API Key
-      azureOpenaiEndpoint:
-          type: string
-          description: Azure OpenAI Endpoint URL
-      azureOpenaiDeploymentName:
-          type: string
-          description: Azure OpenAI Deployment Name
-      openaiApiKey:
-          type: string
-          description: OpenAI API Key
-      openaiModel:
-          type: string
-          description: OpenAI model to use, default gpt-4o
+        type: string
+        description: Lucid API Key
   exampleConfig:
     lucidApiKey: your_lucid_api_key_here
-    azureOpenaiApiKey: your_azure_openai_api_key_here
-    azureOpenaiEndpoint: https://your-resource.openai.azure.com
-    azureOpenaiDeploymentName: gpt-4o
-    openaiApiKey: your_openai_api_key_here
-    openaiModel: gpt-4o

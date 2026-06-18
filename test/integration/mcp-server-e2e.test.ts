@@ -20,11 +20,6 @@ vi.mock('../../src/services/lucidService.js', () => ({
   }
 }));
 
-// Mock the ImageAnalyzer 
-vi.mock('../../src/llm/image-analyzer.js', () => ({
-  ImageAnalyzer: vi.fn()
-}));
-
 describe('Integration: MCP Server End-to-End', () => {
   let server: McpServer;
 
@@ -45,7 +40,7 @@ describe('Integration: MCP Server End-to-End', () => {
     // Register tools
     server.tool(
       "get-document",
-      "Get a specific Lucid document by its ID. Extract document ID from Lucid URL or use known document ID. Supports image export and AI analysis of diagrams.",
+      "Get a specific Lucid document by its ID. Extract document ID from Lucid URL or use known document ID. Supports image export.",
       getDocumentSchema,
       getDocumentHandler
     );

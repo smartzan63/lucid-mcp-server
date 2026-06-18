@@ -2,17 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getDocumentHandler } from '../../../src/tools/getDocument.js';
 import { setupTestEnvironment, resetTestEnvironment, createHttpMockResponse } from '../../utils.js';
 import { mockLucidDocument } from '../../fixtures/data.js';
-import { ImageAnalyzer } from '../../../src/llm/image-analyzer.js';
 import { lucidService } from '../../../src/services/lucidService.js';
-
-vi.mock('../../../src/llm/image-analyzer.js', () => ({
-  ImageAnalyzer: vi.fn().mockImplementation(() => ({
-    analyze: vi.fn().mockResolvedValue({
-      success: true,
-      analysis: 'Mocked analysis result'
-    })
-  }))
-}));
 
 describe('getDocumentHandler', () => {
   beforeEach(() => {
@@ -45,19 +35,26 @@ describe('getDocumentHandler', () => {
     expect(result.content[0].text).toContain('Last Modified:');
   });
 
-  it('should analyze image when analyzeImage is true', async () => {
+  it('should export image when analyzeImage is true', async () => {
     vi.spyOn(lucidService.instance, 'getDocument').mockResolvedValue(mockLucidDocument);
-    vi.spyOn(lucidService.instance, 'exportDocumentAsPng').mockResolvedValue({ base64: 'fake-png-data' });
+    vi.spyOn(lucidService.instance, 'exportDocumentAsPng').mockResolvedValue({
+      base64: 'fake-png-data',
+      contentType: 'image/png',
+      size: 10
+    });
 
     const result = await getDocumentHandler({
       documentId: 'test-doc-123',
       analyzeImage: true
     });
 
-    expect(result.content).toHaveLength(1);
-    expect(result.content[0].type).toBe('text');
-    expect(result.content[0].text).toContain('**Test Document**');
-    expect(result.content[0].text).toContain('Mocked analysis result');
+    const imageItem = result.content.find((c: any) => c.type === 'image');
+    expect(imageItem).toBeDefined();
+    expect((imageItem as any).data).toBe('fake-png-data');
+
+    const textItem = result.content.find((c: any) => c.type === 'text');
+    expect(textItem).toBeDefined();
+    expect((textItem as any).text).toContain('Test Document');
   });
 
   it('should handle documents not found', async () => {
@@ -91,37 +88,6 @@ describe('getDocumentHandler', () => {
     vi.spyOn(lucidService.instance, 'getDocument').mockResolvedValue(mockLucidDocument);
     const result = await getDocumentHandler({ documentId: 'test-doc-123', analyzeImage: false });
     expect(result.content[0].text).toMatch(/\*\*Status:\*\* Trashed on \d{1,2}\/\d{1,2}\/\d{4}/);
-  });
-
-  it('should handle ImageAnalyzer analysis failure', async () => {
-    vi.spyOn(lucidService.instance, 'getDocument').mockResolvedValue(mockLucidDocument);
-    vi.spyOn(lucidService.instance, 'exportDocumentAsPng').mockResolvedValue({
-      base64: 'fake-png-data',
-      contentType: 'image/png',
-      size: 0
-    });
-
-    vi.mocked(ImageAnalyzer).mockImplementationOnce(() => ({
-      analyze: vi.fn().mockResolvedValueOnce({
-        success: false,
-        error: 'Mocked analysis failure'
-      }),
-      initializeProviders: vi.fn(),
-      setProvider: vi.fn(),
-      setFallbackProvider: vi.fn(),
-      getAvailableProviders: vi.fn().mockReturnValue([]),
-      getCurrentProviderStatus: vi.fn().mockReturnValue('mocked'),
-      testProviders: vi.fn().mockResolvedValue([]),
-    } as unknown as ImageAnalyzer));
-
-    const result = await getDocumentHandler({
-      documentId: 'test-doc-123',
-      analyzeImage: true
-    });
-
-    expect(result.content).toHaveLength(1);
-    expect(result.content[0].type).toBe('text');
-    expect(result.content[0].text).toContain('Analysis failed: Mocked analysis failure');
   });
 
   it('should include all optional metadata fields when present', async () => {

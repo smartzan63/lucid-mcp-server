@@ -28,7 +28,7 @@ Lucid MCP Server v${version}
 
 DESCRIPTION:
   Model Context Protocol (MCP) server for Lucid App integration.
-  Enables multimodal LLMs to access and analyze Lucid diagrams.
+  Exports Lucid diagrams as images for a vision-capable client to interpret.
 
 USAGE:
   lucid-mcp-server [options]
@@ -39,11 +39,6 @@ OPTIONS:
 
 ENVIRONMENT VARIABLES:
   LUCID_API_KEY              Required: Your Lucid API key
-  AZURE_OPENAI_API_KEY       Optional: Azure OpenAI API key for AI analysis
-  AZURE_OPENAI_ENDPOINT      Optional: Azure OpenAI endpoint
-  AZURE_OPENAI_DEPLOYMENT_NAME Optional: Azure OpenAI deployment name
-  OPENAI_API_KEY             Optional: OpenAI API key for AI analysis
-  OPENAI_MODEL               Optional: OpenAI model to use (default: gpt-4o)
 
 TOOLS:
   get-document       Get document metadata and export images

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Built-in image-analysis backend (Azure OpenAI / OpenAI). The server no longer calls an LLM; it returns the exported diagram as an MCP `image` content block for the client's own vision-capable model to interpret.
+- `openai` dependency and all related environment variables (`AZURE_OPENAI_*`, `OPENAI_API_KEY`, `OPENAI_MODEL`).
+
+### Changed
+- `get-document` with `analyzeImage: true` now returns the page title and the PNG image block only (no server-generated text analysis). The `analyzeImage` parameter name is retained for compatibility but now only toggles PNG export.
+- Interpreting diagrams now requires a vision-capable model in the MCP client. See "Client and Model Compatibility" in the README for verified clients (Claude Code, Codex CLI, OpenCode with a vision model).
+
 ## [0.1.5] - 2025-08-01
 
 ### Added

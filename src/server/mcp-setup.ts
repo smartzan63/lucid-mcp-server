@@ -28,7 +28,7 @@ export function createMcpServer(version: string): McpServer {
   // Register all tools with proper description
   server.tool(
     "get-document",
-    "Get a specific Lucid document by its ID. Extract document ID from Lucid URL or use known document ID. Supports image export and AI analysis of diagrams.",
+    "Get a specific Lucid document by its ID. Extract document ID from Lucid URL or use known document ID. Supports image export.",
     getDocumentSchema,
     getDocumentHandler
   );

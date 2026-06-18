@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getDocumentHandler, searchDocumentsHandler } from '../../src/tools/index.js';
-import { mockLucidDocument, mockDocumentList, mockImageBase64 } from '../fixtures/data.js';
+import { mockLucidDocument, mockDocumentList } from '../fixtures/data.js';
 import { createHttpMockResponse } from '../utils.js';
 
 // Mock the LucidService to avoid real API calls
@@ -13,11 +13,6 @@ vi.mock('../../src/services/lucidService.js', () => ({
     },
     resetInstance: vi.fn()
   }
-}));
-
-// Mock the ImageAnalyzer 
-vi.mock('../../src/llm/image-analyzer.js', () => ({
-  ImageAnalyzer: vi.fn()
 }));
 
 describe('Integration: MCP Tools', () => {
@@ -132,44 +127,27 @@ describe('Integration: MCP Tools', () => {
       expect(result.content[0].text).toContain('1/1/2024'); // Date format as shown in the actual output
     });
 
-    it('should handle image analysis when Azure OpenAI is not available', async () => {
-      // Clear Azure OpenAI environment variables
-      delete process.env.AZURE_OPENAI_API_KEY;
-      delete process.env.AZURE_OPENAI_ENDPOINT;
-      delete process.env.AZURE_OPENAI_DEPLOYMENT_NAME;
-
+    it('should export an image content block when analyzeImage is true', async () => {
       const { lucidService } = await import('../../src/services/lucidService.js');
-      const { ImageAnalyzer } = await import('../../src/llm/image-analyzer.js');
-      
+
       (lucidService.instance.getDocument as any).mockResolvedValue(mockLucidDocument);
       (lucidService.instance.exportDocumentAsPng as any).mockResolvedValue({
-        base64: mockImageBase64,
+        base64: 'fake-png-data',
         contentType: 'image/png',
         size: 1024
       });
-
-      const mockAnalyzer = {
-        analyze: vi.fn().mockResolvedValue({
-          success: false,
-          error: 'No LLM providers available. Please check your configuration.',
-          metadata: {
-            provider: 'none',
-            model: 'none',
-            timestamp: new Date().toISOString()
-          }
-        })
-      };
-      (ImageAnalyzer as any).mockImplementation(() => mockAnalyzer);
 
       const result = await getDocumentHandler({
         documentId: 'test-doc-123',
         analyzeImage: true
       });
 
-      expect(result.content).toBeDefined();
-      expect(result.content[0].type).toBe('text');      expect(result.content[0].text).toContain('Test Document');
-      expect(result.content[0].text).toContain('Analysis failed'); // Match actual output
-      expect(result.content[0].text).toContain('No LLM providers available');
+      const imageItem = result.content.find((c: any) => c.type === 'image');
+      expect(imageItem).toBeDefined();
+      expect((imageItem as any).data).toBe('fake-png-data');
+
+      const textItem = result.content.find((c: any) => c.type === 'text');
+      expect((textItem as any).text).toContain('Test Document');
     });
 
     it('should handle document not found', async () => {
@@ -209,8 +187,7 @@ describe('Integration: MCP Tools', () => {
       expect(result.content[0].text).toContain('Invalid page ID');
     });    it('should handle export image failure gracefully', async () => {
       const { lucidService } = await import('../../src/services/lucidService.js');
-      const { ImageAnalyzer } = await import('../../src/llm/image-analyzer.js');
-      
+
       (lucidService.instance.getDocument as any).mockResolvedValue(mockLucidDocument);
       (lucidService.instance.exportDocumentAsPng as any).mockRejectedValue(new Error('Export failed'));
 

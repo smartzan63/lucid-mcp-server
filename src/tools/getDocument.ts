@@ -1,11 +1,10 @@
 import { z } from "zod";
-import { ImageAnalyzer } from "../llm/image-analyzer.js";
 import { lucidService } from "../services/lucidService.js";
 
 export const getDocumentSchema = {
   documentId: z.string().describe("The ID of the Lucid document to retrieve. Can be extracted from URLs like https://lucid.app/lucidchart/{id}/edit"),
-  analyzeImage: z.boolean().optional().describe("If true, perform AI analysis of the exported diagram (default: false)"),
-  pageId: z.string().optional().describe("Page ID to export/analyze (default: '0_0')")
+  analyzeImage: z.boolean().optional().describe("If true, export the diagram as a PNG image (default: false, returns metadata only)"),
+  pageId: z.string().optional().describe("Page ID to export (default: '0_0')")
 };
 
 export const getDocumentHandler = async ({
@@ -79,32 +78,23 @@ export const getDocumentHandler = async ({
           }
         ]
       };
-    }    // Export and analyze image
+    }    // Export the diagram as PNG
     const imageData = await lucidService.instance.exportDocumentAsPng(documentId, pageId);
-    const analyzer = new ImageAnalyzer();
-    const analysisResult = await analyzer.analyze({
-      imageBase64: imageData.base64
-    });
 
-    if (analysisResult.success) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `**${doc.title || 'Lucid Diagram'}**\n\n${analysisResult.analysis}`
-          }
-        ]
-      };
-    } else {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `**${doc.title || 'Lucid Diagram'}**\n\nAnalysis failed: ${analysisResult.error}`
-          }
-        ]
-      };
-    }
+    // Return the raw image so a vision-capable caller can interpret it directly.
+    const content: any[] = [
+      {
+        type: "text" as const,
+        text: `**${doc.title || 'Lucid Diagram'}** (page ${pageId})`
+      },
+      {
+        type: "image" as const,
+        data: imageData.base64,
+        mimeType: imageData.contentType || "image/png"
+      }
+    ];
+
+    return { content };
   } catch (err: any) {
     return {
       content: [

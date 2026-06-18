@@ -20,13 +20,13 @@ describe('getDocumentTabsHandler', () => {
 
   it('should return document tab metadata successfully', async () => {
     const mockDocumentContent = {
-      id: '8077d744-2b83-4f07-bde3-f2b1d9a0df65',
-      title: 'Schedules Overview',
+      id: 'example-doc-id',
+      title: 'Example Document',
       product: 'lucidchart',
       pages: [
         {
           id: '0_0',
-          title: 'Overview',
+          title: 'Page 1',
           index: 0,
           items: {
             shapes: [{ id: 'shape1', type: 'rectangle' }],
@@ -36,8 +36,8 @@ describe('getDocumentTabsHandler', () => {
           }
         },
         {
-          id: 'MeKYiJAifera',
-          title: 'Details',
+          id: 'abc123',
+          title: 'Page 2',
           index: 1,
           items: {
             shapes: [{ id: 'shape2', type: 'circle' }],
@@ -52,28 +52,28 @@ describe('getDocumentTabsHandler', () => {
     mockGetDocumentContent.mockResolvedValue(mockDocumentContent);
 
     const result = await getDocumentTabsHandler({
-      documentId: '8077d744-2b83-4f07-bde3-f2b1d9a0df65'
+      documentId: 'example-doc-id'
     });
 
-    expect(mockGetDocumentContent).toHaveBeenCalledWith('8077d744-2b83-4f07-bde3-f2b1d9a0df65');
+    expect(mockGetDocumentContent).toHaveBeenCalledWith('example-doc-id');
     
     expect(result.content).toHaveLength(1);
     expect(result.content[0].type).toBe('text');
     
     const parsedResult = JSON.parse(result.content[0].text);
     expect(parsedResult).toEqual({
-      documentId: '8077d744-2b83-4f07-bde3-f2b1d9a0df65',
-      title: 'Schedules Overview',
+      documentId: 'example-doc-id',
+      title: 'Example Document',
       product: 'lucidchart',
       pages: [
         {
           id: '0_0',
-          title: 'Overview',
+          title: 'Page 1',
           index: 0
         },
         {
-          id: 'MeKYiJAifera',
-          title: 'Details',
+          id: 'abc123',
+          title: 'Page 2',
           index: 1
         }
       ]

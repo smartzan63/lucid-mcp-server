@@ -6,10 +6,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Install in VS Code](https://img.shields.io/badge/Install_in-VS_Code-0078d4?style=flat-square&logo=visualstudiocode)](https://vscode.dev/redirect/mcp/install?name=lucid-mcp-server&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22lucid-mcp-server%22%7D)
 
-Model Context Protocol (MCP) server for Lucid App integration. Enables multimodal LLMs to access and analyze Lucid diagrams through visual exports.
+Model Context Protocol (MCP) server for Lucid App integration. Exports Lucid diagrams as images so a vision-capable client can interpret them.
 
 ## Table of Contents
 - [Features](#features)
+- [How It Works](#how-it-works)
+- [Client and Model Compatibility](#client-and-model-compatibility)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
 - [Usage](#usage)
@@ -22,11 +24,37 @@ Model Context Protocol (MCP) server for Lucid App integration. Enables multimoda
 
 - 🔍 **Document discovery** and metadata retrieval from LucidChart, LucidSpark, and LucidScale
 - 📑 **Lightweight tab metadata** for quick document structure overview
-- 🖼️ **PNG image export** from Lucid diagrams  
-- 🤖 **AI-powered diagram analysis** with multimodal LLMs (supports Azure OpenAI and OpenAI)
-- ⚙️ **Environment-based API key management** with automatic fallback from Azure to OpenAI.
+- 🖼️ **PNG image export** from Lucid diagrams, returned as an image content block for a vision-capable client to interpret
 - 📝 **TypeScript implementation** with full test coverage
 - 🔧 **MCP Inspector integration** for easy testing
+
+## How It Works
+
+The server is a thin bridge to the Lucid REST API. It does **not** run any LLM of its own:
+
+- `search-documents` and `get-document-tabs` return JSON metadata from the Lucid API.
+- `get-document` with `analyzeImage: true` exports the requested page as a PNG and returns it as an MCP `image` content block.
+
+Diagram interpretation is delegated entirely to the model already driving your MCP client. This keeps the server free of any AI-provider dependency and reuses the (typically more capable) model running your session instead of a second, separately configured one.
+
+> Earlier versions (≤ 0.1.x) shipped a built-in image-analysis backend (Azure OpenAI / OpenAI) that returned a text description. Modern MCP clients forward image content directly to vision-capable models, making that second model redundant, so it was removed. The `analyzeImage` parameter name is kept for compatibility; it now simply toggles PNG export.
+
+## Client and Model Compatibility
+
+Because the server returns a raw image, the **active session model must be vision-capable**. Behaviour by client:
+
+| Client | MCP image support | Notes |
+|--------|-------------------|-------|
+| Claude Code | Yes | Claude is multimodal; works out of the box. |
+| Codex CLI | Yes (current versions) | Image results from MCP tools reach the model since the Rust MCP client became the default. Older builds displayed `<image content>` the model could not see. |
+| OpenCode | Yes, with a vision model | Forwards MCP image blocks to the model. Pick a vision-capable model (e.g. GPT-5.x, GPT-4o). A non-vision model, or a model router that selects one, will report it cannot see the image. |
+
+Verified by exporting a real architecture diagram and confirming the model described its boxes and connections from the image alone:
+
+- Claude Code (multimodal Claude model)
+- OpenCode running GPT-5.5
+
+If `get-document` returns an image but the model replies that it cannot see it, switch your session to a vision-capable model.
 
 ## Prerequisites
 
@@ -34,9 +62,7 @@ Before you begin, ensure you have the following:
 
 - **Node.js**: Version 18 or higher.
 - **Lucid API Key**: A key from the [Lucid Developer Portal](https://developer.lucid.co/docs/api-keys) is **required** for all features.
-- **AI Provider Key (Optional)**: For AI-powered diagram analysis, you need an API key for either:
-    - [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service)
-    - [OpenAI](https://platform.openai.com/)
+- **Vision-capable client**: To interpret exported diagram images, use an MCP client backed by a vision-capable model. The server does not analyze images itself; it returns the raw PNG.
 
 ## Quick Start
 
@@ -57,24 +83,12 @@ npm install -g lucid-mcp-server
 ```
 
 ### 2. Configure
-Set the following environment variables in your terminal. Only the Lucid API key is required.
+Set the Lucid API key environment variable in your terminal.
 
 ```bash
 # Required for all features
 export LUCID_API_KEY="your_api_key_here"
-
-# Optional: For AI analysis, configure either Azure OpenAI or OpenAI
-
-# Option 1: Azure OpenAI (takes precedence)
-export AZURE_OPENAI_API_KEY="your_azure_openai_key"
-export AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"  
-export AZURE_OPENAI_DEPLOYMENT_NAME="gpt-4o"
-
-# Option 2: OpenAI (used as a fallback if Azure is not configured)
-export OPENAI_API_KEY="your_openai_api_key"
-export OPENAI_MODEL="gpt-4o" # Optional, defaults to gpt-4o
 ```
-> **Note**: The server automatically uses Azure OpenAI if `AZURE_OPENAI_API_KEY` is set. If not, it falls back to OpenAI if `OPENAI_API_KEY` is provided.
 
 ### 3. Verify
 Test your installation using the MCP Inspector:
@@ -88,11 +102,11 @@ Once the server is running, you can interact with it using natural language or b
 
 ### Example Prompts
 
-- **Basic commands** (works with just a Lucid API key):
+- **Document commands**:
   - *"Show me all my Lucid documents"*
   - *"Get information about the document with ID: [document-id]"*
 
-- **AI Analysis** (requires Azure OpenAI or OpenAI setup):
+- **Diagram interpretation** (the client's vision-capable model reads the exported image):
   - *"Analyze this diagram: [document-id]"*
   - *"What does this Lucid diagram show: [document-id]"*
 
@@ -111,11 +125,11 @@ Lists documents in your Lucid account.
   ```
 
 #### 📋 `get-document`
-Gets document metadata and can optionally perform AI analysis on its visual content.
+Gets document metadata and can optionally export the diagram as a PNG image for a vision-capable client to interpret.
 
 - **Parameters:**
   - `documentId` (string): The ID of the document from the Lucid URL.
-  - `analyzeImage` (boolean, optional): Set to `true` to perform AI analysis. ⚠️ **Requires Azure or OpenAI key.**
+  - `analyzeImage` (boolean, optional): Set to `true` to export the diagram as a PNG image (default: `false`, returns metadata only).
   - `pageId` (string, optional): The specific page to export (default: "0_0").
 - **Example:**
   ```json
@@ -153,7 +167,7 @@ You can integrate the server directly into Visual Studio Code.
 
 ### Method 2: Quick Install Link
 
-Click the **"Install in VS Code"** badge at the top of this README, then follow the on-screen prompts. You will need to configure the environment variables manually in your `settings.json`.
+Click the **"Install in VS Code"** badge at the top of this README, then follow the on-screen prompts. You will need to configure the `LUCID_API_KEY` environment variable manually in your `settings.json`.
 
 ### Method 3: Manual Configuration
 
@@ -170,12 +184,7 @@ Add the following JSON to your VS Code `settings.json` file. This method provide
         "type": "stdio",
         "command": "lucid-mcp-server",
         "env": {
-          "LUCID_API_KEY": "${input:lucid_api_key}",
-          "AZURE_OPENAI_API_KEY": "${input:azure_openai_api_key}",
-          "AZURE_OPENAI_ENDPOINT": "${input:azure_openai_endpoint}",
-          "AZURE_OPENAI_DEPLOYMENT_NAME": "${input:azure_openai_deployment_name}",
-          "OPENAI_API_KEY": "${input:openai_api_key}",
-          "OPENAI_MODEL": "${input:openai_model}"
+          "LUCID_API_KEY": "${input:lucid_api_key}"
         }
       }
     },
@@ -184,31 +193,6 @@ Add the following JSON to your VS Code `settings.json` file. This method provide
         "id": "lucid_api_key", 
         "type": "promptString",
         "description": "Lucid API Key (REQUIRED)"
-      },
-      {
-        "id": "azure_openai_api_key",
-        "type": "promptString", 
-        "description": "Azure OpenAI API Key (Optional, for AI analysis)"
-      },
-      {
-        "id": "azure_openai_endpoint",
-        "type": "promptString",
-        "description": "Azure OpenAI Endpoint (Optional, for AI analysis)"
-      },
-      {
-        "id": "azure_openai_deployment_name",
-        "type": "promptString",
-        "description": "Azure OpenAI Deployment Name (Optional, for AI analysis)"
-      },
-      {
-        "id": "openai_api_key",
-        "type": "promptString", 
-        "description": "OpenAI API Key (Optional, for AI analysis - used if Azure is not configured)"
-      },
-      {
-        "id": "openai_model",
-        "type": "promptString",
-        "description": "OpenAI Model (Optional, for AI analysis, default: gpt-4o)"
       }
     ]
   }

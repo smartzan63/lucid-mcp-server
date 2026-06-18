@@ -90,34 +90,7 @@ export const mockDocumentContent = {
   ],
 };
 
-export const mockAnalysisResult = {
-  summary: 'This is a simple flowchart showing a start node connected to a decision point.',
-  elements: [
-    {
-      type: 'start_node',
-      text: 'Start',
-      description: 'The starting point of the process',
-    },
-    {
-      type: 'decision_node',
-      text: 'Decision?',
-      description: 'A decision point requiring user input',
-    },
-  ],
-  insights: [
-    'The flowchart follows standard notation',
-    'Consider adding more detail to the decision criteria',
-  ],
-};
-
-export const mockImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-
 export const mockEnvironmentVariables = {
-  AZURE_OPENAI_API_KEY: 'test-azure-key',
-  AZURE_OPENAI_ENDPOINT: 'https://test.openai.azure.com',
-  AZURE_OPENAI_DEPLOYMENT: 'gpt-4o',
-  OPENAI_API_KEY: 'test-openai-key',
-  GITHUB_TOKEN: 'ghp_test-github-token-for-testing',
   LUCID_API_KEY: 'test-lucid-api-key',
   LUCID_CLIENT_ID: 'test-lucid-client-id',
   LUCID_CLIENT_SECRET: 'test-lucid-client-secret',
