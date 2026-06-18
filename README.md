@@ -3,7 +3,6 @@
 [![npm version](https://img.shields.io/npm/v/lucid-mcp-server.svg)](https://www.npmjs.com/package/lucid-mcp-server)
 [![npm downloads](https://img.shields.io/npm/dm/lucid-mcp-server.svg)](https://www.npmjs.com/package/lucid-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Install in VS Code](https://img.shields.io/badge/Install_in-VS_Code-0078d4?style=flat-square&logo=visualstudiocode)](https://vscode.dev/redirect/mcp/install?name=lucid-mcp-server&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22lucid-mcp-server%22%7D)
 
 Model Context Protocol (MCP) server for Lucid App integration. Exports Lucid diagrams as images so a vision-capable client can interpret them.
 
@@ -12,9 +11,8 @@ Model Context Protocol (MCP) server for Lucid App integration. Exports Lucid dia
 - [How It Works](#how-it-works)
 - [Client and Model Compatibility](#client-and-model-compatibility)
 - [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
+- [Installation](#installation)
 - [Usage](#usage)
-- [VS Code Integration](#vs-code-integration)
 - [Contributing](#contributing)
 - [References](#references)
 - [License](#license)
@@ -63,28 +61,43 @@ Before you begin, ensure you have the following:
 - **Lucid API Key**: A key from the [Lucid Developer Portal](https://developer.lucid.co/docs/api-keys) is **required** for all features.
 - **Vision-capable client**: To interpret exported diagram images, use an MCP client backed by a vision-capable model. The server does not analyze images itself; it returns the raw PNG.
 
-## Quick Start
+## Installation
 
-Follow these steps to get the server running.
+`lucid-mcp-server` is a stdio MCP server and works with any MCP-capable client (Claude Code, Claude Desktop, Cursor, Codex, OpenCode, and others). Every client has its own config file and format, so there is no single set of steps. The fastest path is to ask your coding agent to "add the lucid-mcp-server MCP server, following its README" and let it write the config for your specific client.
 
-### 1. Install
-Install the package globally from npm:
-```bash
-npm install -g lucid-mcp-server
+Whatever the client, you only need two things:
+
+- A way to run the server: `npx -y lucid-mcp-server` (no install), or install it once with `npm install -g lucid-mcp-server` and run `lucid-mcp-server`.
+- The `LUCID_API_KEY` environment variable: the only required setting. Get a key from the [Lucid Developer Portal](https://developer.lucid.co/docs/api-keys).
+
+### Example: Claude Code
+
+Add this to your `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "lucid": {
+      "command": "npx",
+      "args": ["-y", "lucid-mcp-server"],
+      "env": {
+        "LUCID_API_KEY": "your-lucid-api-key"
+      }
+    }
+  }
+}
 ```
 
-### 2. Configure
-Set the Lucid API key environment variable in your terminal.
+> Windows: npm's `.cmd` shim may not spawn directly. Wrap it as `"command": "cmd", "args": ["/c", "npx", "-y", "lucid-mcp-server"]`.
+
+Other clients use the same three pieces, the launch command, its arguments, and the `LUCID_API_KEY` env var, expressed in their own config format. Point your agent at the example above and it will adapt it.
+
+### Verify (optional)
+
+Run the server under the MCP Inspector to confirm it starts and lists its tools (set `LUCID_API_KEY` in your environment first):
 
 ```bash
-# Required for all features
-export LUCID_API_KEY="your_api_key_here"
-```
-
-### 3. Verify
-Test your installation using the MCP Inspector:
-```bash
-npx @modelcontextprotocol/inspector lucid-mcp-server
+npx @modelcontextprotocol/inspector npx -y lucid-mcp-server
 ```
 
 ## Usage
@@ -142,57 +155,6 @@ Gets lightweight metadata about all tabs (pages) in a Lucid document without ret
     "documentId": "demo-document-id-here-12345678/edit"
   }
   ```
-
-## VS Code Integration
-
-You can integrate the server directly into Visual Studio Code.
-
-### Method 1: Through VS Code UI (Recommended)
-
-1.  Open the **Command Palette** (`Ctrl+Shift+P` or `Cmd+Shift+P`).
-2.  Run the command: **"MCP: Add Server"**.
-3.  Choose **"npm"** as the source.
-4.  Enter the package name: **`lucid-mcp-server`**.
-5.  VS Code will guide you through the rest of the setup.
-6.  Verify automatically created configuration, because AI can make mistakes
-
-### Method 2: Quick Install Link
-
-Click the **"Install in VS Code"** badge at the top of this README, then follow the on-screen prompts. You will need to configure the `LUCID_API_KEY` environment variable manually in your `settings.json`.
-
-### Method 3: Manual Configuration
-
-<details>
-<summary>Click to view manual `settings.json` configuration</summary>
-
-Add the following JSON to your VS Code `settings.json` file. This method provides the most control and is useful for custom setups.
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "lucid-mcp-server": {
-        "type": "stdio",
-        "command": "lucid-mcp-server",
-        "env": {
-          "LUCID_API_KEY": "${input:lucid_api_key}"
-        }
-      }
-    },
-    "inputs": [
-      {
-        "id": "lucid_api_key", 
-        "type": "promptString",
-        "description": "Lucid API Key (REQUIRED)"
-      }
-    ]
-  }
-}
-```
-</details>
-
-## Small Demo
-![image](https://github.com/user-attachments/assets/eb6a2870-2544-4c2f-8b26-aa2b93e8972a)
 
 ## 🤝 Contributing
 
