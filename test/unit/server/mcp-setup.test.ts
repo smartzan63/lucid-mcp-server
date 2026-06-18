@@ -69,14 +69,18 @@ describe('MCP Server Setup', () => {
     it('should create MCP server with correct configuration', () => {
       const server = createMcpServer('1.2.3');
 
-      expect(McpServer).toHaveBeenCalledWith({
-        name: "lucid-mcp-server",
-        version: "1.2.3",
-        capabilities: {
-          resources: {},
-          tools: {},
+      expect(McpServer).toHaveBeenCalledWith(
+        {
+          name: "lucid-mcp-server",
+          version: "1.2.3",
         },
-      });
+        {
+          capabilities: {
+            resources: {},
+            tools: {},
+          },
+        }
+      );
 
       expect(server).toBe(mockServer);
     });
@@ -123,27 +127,35 @@ describe('MCP Server Setup', () => {
     it('should handle different version formats', () => {
       createMcpServer('0.1.0-beta.1+build.123');
 
-      expect(McpServer).toHaveBeenCalledWith({
-        name: "lucid-mcp-server",
-        version: "0.1.0-beta.1+build.123",
-        capabilities: {
-          resources: {},
-          tools: {},
+      expect(McpServer).toHaveBeenCalledWith(
+        {
+          name: "lucid-mcp-server",
+          version: "0.1.0-beta.1+build.123",
         },
-      });
+        {
+          capabilities: {
+            resources: {},
+            tools: {},
+          },
+        }
+      );
     });
 
     it('should handle empty version', () => {
       createMcpServer('');
 
-      expect(McpServer).toHaveBeenCalledWith({
-        name: "lucid-mcp-server",
-        version: "",
-        capabilities: {
-          resources: {},
-          tools: {},
+      expect(McpServer).toHaveBeenCalledWith(
+        {
+          name: "lucid-mcp-server",
+          version: "",
         },
-      });
+        {
+          capabilities: {
+            resources: {},
+            tools: {},
+          },
+        }
+      );
     });
   });
 

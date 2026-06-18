@@ -7,13 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-18
+
 ### Removed
 - Built-in image-analysis backend (Azure OpenAI / OpenAI). The server no longer calls an LLM; it returns the exported diagram as an MCP `image` content block for the client's own vision-capable model to interpret.
 - `openai` dependency and all related environment variables (`AZURE_OPENAI_*`, `OPENAI_API_KEY`, `OPENAI_MODEL`).
+- Smithery deployment config (`smithery.yaml`, `Dockerfile`). The package is distributed via npm; Smithery deployment is no longer maintained.
 
 ### Changed
 - `get-document` with `analyzeImage: true` now returns the page title and the PNG image block only (no server-generated text analysis). The `analyzeImage` parameter name is retained for compatibility but now only toggles PNG export.
 - Interpreting diagrams now requires a vision-capable model in the MCP client. See "Client and Model Compatibility" in the README for verified clients (Claude Code, Codex CLI, OpenCode with a vision model).
+
+### Fixed
+- Build against `@modelcontextprotocol/sdk` 1.16+ : `capabilities` moved to the `McpServer` options (second constructor argument), matching the current SDK signature. Previously the build broke when a fresh install resolved a newer SDK than the one pinned locally.
+
+### Internal
+- Commit `package-lock.json` and switch CI to `npm ci` for reproducible builds, preventing silent dependency drift between local and CI.
 
 ## [0.1.5] - 2025-08-01
 

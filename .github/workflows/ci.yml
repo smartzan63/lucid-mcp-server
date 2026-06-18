@@ -22,9 +22,10 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
+        cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
 
     - name: Run linter
       run: npm run lint || echo "Linter not configured"
@@ -40,6 +41,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: matrix.node-version == '20.x'
+      continue-on-error: true
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage/lcov.info
@@ -51,22 +53,27 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
 
+    permissions:
+      contents: read
+      id-token: write   # required for npm provenance
+
     steps:
     - uses: actions/checkout@v4
 
-    - name: Use Node.js 20.x
+    - name: Use Node.js 22.x
       uses: actions/setup-node@v4
       with:
-        node-version: '20.x'
+        node-version: '22.x'
         registry-url: 'https://registry.npmjs.org'
+        cache: 'npm'
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
 
     - name: Build project
       run: npm run build
 
     - name: Publish to NPM
-      run: npm publish
+      run: npm publish --provenance --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

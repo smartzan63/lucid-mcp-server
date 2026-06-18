@@ -1,6 +1,6 @@
 {
   "name": "lucid-mcp-server",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "Model Context Protocol (MCP) server for Lucid App integration.",
   "main": "./build/index.js",
   "type": "module",
@@ -8,7 +8,8 @@
     "lucid-mcp-server": "build/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "clean": "node -e \"require('fs').rmSync('build', { recursive: true, force: true })\"",
+    "build": "npm run clean && tsc",
     "start": "node ./build/index.js",
     "inspector": "npx @modelcontextprotocol/inspector node ./build/index.js",
     "test": "vitest run",
@@ -19,7 +20,6 @@
     "setup": "npm run build && echo 'Add to your MCP config:' && echo '{\"servers\":{\"lucid-mcp-server\":{\"type\":\"stdio\",\"command\":\"lucid-mcp-server\"}}}'",
     "prepublishOnly": "npm run build && npm test",
     "prepack": "npm run build",
-    
     "check-publication": "node ./scripts/check-publication.js"
   },
   "keywords": [
@@ -34,12 +34,12 @@
   "author": "Aleksandr Mukhorkin <smartzan63@gmail.com>",
   "license": "MIT",
   "devDependencies": {
+    "@api/lucid-developer-docs": "file:.api/apis/lucid-developer-docs",
     "@types/dotenv": "^8.2.3",
     "@types/node": "^24.0.3",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "ts-node": "^10.9.2",
-    "@api/lucid-developer-docs": "file:.api/apis/lucid-developer-docs",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3",
     "vite": "^7.0.0",
@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@api/lucid-developer-docs": "file:.api/apis/lucid-developer-docs",
-    "@modelcontextprotocol/sdk": "^1.13.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "api": "^6.1.3",
     "dotenv": "^16.5.0",
     "json-schema-to-ts": "^2.8.0-beta.0",

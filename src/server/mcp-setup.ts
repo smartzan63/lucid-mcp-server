@@ -16,14 +16,18 @@ import { log } from "../utils/logger.js";
  * @returns {McpServer} Configured MCP server
  */
 export function createMcpServer(version: string): McpServer {
-  const server = new McpServer({
-    name: "lucid-mcp-server",
-    version: version,
-    capabilities: {
-      resources: {},
-      tools: {},
+  const server = new McpServer(
+    {
+      name: "lucid-mcp-server",
+      version: version,
     },
-  });
+    {
+      capabilities: {
+        resources: {},
+        tools: {},
+      },
+    }
+  );
 
   // Register all tools with proper description
   server.tool(

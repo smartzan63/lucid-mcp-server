@@ -1,6 +1,5 @@
 # Lucid MCP Server
 
-[![smithery badge](https://smithery.ai/badge/@smartzan63/lucid-mcp-server)](https://smithery.ai/server/@smartzan63/lucid-mcp-server)
 [![npm version](https://img.shields.io/npm/v/lucid-mcp-server.svg)](https://www.npmjs.com/package/lucid-mcp-server)
 [![npm downloads](https://img.shields.io/npm/dm/lucid-mcp-server.svg)](https://www.npmjs.com/package/lucid-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -67,14 +66,6 @@ Before you begin, ensure you have the following:
 ## Quick Start
 
 Follow these steps to get the server running.
-
-### Installing via Smithery
-
-To install lucid-mcp-server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@smartzan63/lucid-mcp-server):
-
-```bash
-npx -y @smithery/cli install @smartzan63/lucid-mcp-server --client claude
-```
 
 ### 1. Install
 Install the package globally from npm:
