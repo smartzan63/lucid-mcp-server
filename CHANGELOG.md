@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Internal
 - Commit `package-lock.json` and switch CI to `npm ci` for reproducible builds, preventing silent dependency drift between local and CI.
+- Require Node.js >= 22 (`engines`); CI now tests on Node 22 and 24 and uses the current major versions of the GitHub Actions.
+- Publish to npm via trusted publishing (OIDC), no long-lived token, with automatic provenance.
 
 ## [0.1.5] - 2025-08-01
 
