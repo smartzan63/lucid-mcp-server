@@ -22,7 +22,11 @@ vi.mock('../../../src/tools/index.js', () => ({
   searchDocumentsSchema: { keywords: { type: 'string' } },
   searchDocumentsHandler: vi.fn(),
   getDocumentTabsSchema: { documentId: { type: 'string' } },
-  getDocumentTabsHandler: vi.fn()
+  getDocumentTabsHandler: vi.fn(),
+  createDiagramSchema: { title: { type: 'string' }, standardImportJson: { type: 'string' } },
+  createDiagramHandler: vi.fn(),
+  deleteDiagramSchema: { documentId: { type: 'string' } },
+  deleteDiagramHandler: vi.fn()
 }));
 
 vi.mock('../../../src/utils/logger.js', () => ({
@@ -42,7 +46,11 @@ import {
   searchDocumentsSchema,
   searchDocumentsHandler,
   getDocumentTabsSchema,
-  getDocumentTabsHandler
+  getDocumentTabsHandler,
+  createDiagramSchema,
+  createDiagramHandler,
+  deleteDiagramSchema,
+  deleteDiagramHandler
 } from '../../../src/tools/index.js';
 import { log } from '../../../src/utils/logger.js';
 
@@ -118,10 +126,32 @@ describe('MCP Server Setup', () => {
       );
     });
 
-    it('should register exactly 3 tools', () => {
+    it('should register create-diagram tool', () => {
       createMcpServer('1.2.3');
 
-      expect(mockServer.tool).toHaveBeenCalledTimes(3);
+      expect(mockServer.tool).toHaveBeenCalledWith(
+        "create-diagram",
+        expect.stringContaining("Create a new Lucid diagram"),
+        createDiagramSchema,
+        createDiagramHandler
+      );
+    });
+
+    it('should register delete-diagram tool', () => {
+      createMcpServer('1.2.3');
+
+      expect(mockServer.tool).toHaveBeenCalledWith(
+        "delete-diagram",
+        expect.stringContaining("Delete a Lucid document"),
+        deleteDiagramSchema,
+        deleteDiagramHandler
+      );
+    });
+
+    it('should register exactly 5 tools', () => {
+      createMcpServer('1.2.3');
+
+      expect(mockServer.tool).toHaveBeenCalledTimes(5);
     });
 
     it('should handle different version formats', () => {

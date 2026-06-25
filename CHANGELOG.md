@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-25
+
+### Added
+- `create-diagram` tool: creates a new Lucid document from Lucid Standard Import JSON. Packages the JSON into a `.lucid` archive and posts it to the Lucid API, returning the edit URL. The `standardImportJson` parameter description embeds a compact authoring guide (shape types, line endpoints, assisted layout). Requires an API key with document edit (write) scope.
+- `delete-diagram` tool: moves a Lucid document to the trash by ID. Requires write scope.
+- `fflate` dependency for in-memory `.lucid` (zip) packaging.
+
+### Changed
+- The MCP server now registers 5 tools (was 3).
+- README documents the new write capabilities, the write-scope requirement, and the absence of in-place content editing in the Lucid REST API: editing means create-new-then-delete-old, and exported JSON and Standard Import JSON are not interchangeable (no download-edit-reupload round trip).
+- Prerequisites now state Node.js >= 22 (matching `engines`).
+
 ## [0.2.0] - 2026-06-18
 
 ### Removed

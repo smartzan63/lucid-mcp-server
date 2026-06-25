@@ -224,6 +224,124 @@ describe('LucidService', () => {
     });
   });
 
+  describe('createDocumentFromStandardImport', () => {
+    const validJson = JSON.stringify({ version: 1, pages: [{ id: 'p1', shapes: [] }] });
+
+    it('should throw when standardImportJson is missing', async () => {
+      process.env.LUCID_API_KEY = 'test-key';
+      const service = new LucidService();
+      await expect(service.createDocumentFromStandardImport('', 'Title')).rejects.toThrow(
+        'standardImportJson is required'
+      );
+    });
+
+    it('should throw when title is missing', async () => {
+      process.env.LUCID_API_KEY = 'test-key';
+      const service = new LucidService();
+      await expect(service.createDocumentFromStandardImport(validJson, '')).rejects.toThrow(
+        'title is required'
+      );
+    });
+
+    it('should throw on invalid JSON', async () => {
+      process.env.LUCID_API_KEY = 'test-key';
+      const service = new LucidService();
+      await expect(service.createDocumentFromStandardImport('{ not json', 'Title')).rejects.toThrow(
+        /standardImportJson is not valid JSON/
+      );
+    });
+
+    it('should POST a multipart body and return the created document', async () => {
+      process.env.LUCID_API_KEY = 'test-key';
+      const service = new LucidService();
+
+      const created = {
+        documentId: 'new-doc',
+        title: 'Title',
+        editUrl: 'https://lucid.app/lucidchart/new-doc/edit',
+        viewUrl: 'https://lucid.app/lucidchart/new-doc/view',
+        pageCount: 1
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue(created)
+      });
+      global.fetch = fetchMock as any;
+
+      const result = await service.createDocumentFromStandardImport(validJson, 'Title', 'lucidchart', 7);
+
+      expect(result).toEqual(created);
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe('https://api.lucid.co/documents');
+      expect(init.method).toBe('POST');
+      expect(init.headers['Authorization']).toBe('Bearer test-key');
+      expect(init.headers['Lucid-Api-Version']).toBe('1');
+      expect(init.body).toBeInstanceOf(FormData);
+      // Caller must NOT set Content-Type manually (fetch sets the multipart boundary)
+      expect(init.headers['Content-Type']).toBeUndefined();
+      const form = init.body as FormData;
+      expect(form.get('product')).toBe('lucidchart');
+      expect(form.get('title')).toBe('Title');
+      expect(form.get('parent')).toBe('7');
+      const file = form.get('file') as File;
+      expect(file).toBeInstanceOf(Blob);
+      // Blob normalizes the MIME type to lowercase; Lucid matches case-insensitively (verified against live API)
+      expect((file as Blob).type).toBe('x-application/vnd.lucid.standardimport');
+    });
+
+    it('should surface HTTP error details from the API', async () => {
+      process.env.LUCID_API_KEY = 'test-key';
+      const service = new LucidService();
+
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 415,
+        statusText: 'Unsupported Media Type',
+        text: vi.fn().mockResolvedValue('{"code":"invalidImportType"}')
+      }) as any;
+
+      await expect(
+        service.createDocumentFromStandardImport(validJson, 'Title')
+      ).rejects.toThrow(/Failed to create document: HTTP 415 Unsupported Media Type - .*invalidImportType/);
+    });
+  });
+
+  describe('trashDocument', () => {
+    it('should throw when document ID is missing', async () => {
+      process.env.LUCID_API_KEY = 'test-key';
+      const service = new LucidService();
+      await expect(service.trashDocument('')).rejects.toThrow('Document ID is required');
+    });
+
+    it('should POST to the trash endpoint and resolve on 204', async () => {
+      process.env.LUCID_API_KEY = 'test-key';
+      const service = new LucidService();
+
+      const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204 });
+      global.fetch = fetchMock as any;
+
+      await expect(service.trashDocument('doc-1')).resolves.toBeUndefined();
+
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe('https://api.lucid.co/documents/doc-1/trash');
+      expect(init.method).toBe('POST');
+      expect(init.headers['Authorization']).toBe('Bearer test-key');
+      expect(init.headers['Lucid-Api-Version']).toBe('1');
+    });
+
+    it('should throw on a non-ok response', async () => {
+      process.env.LUCID_API_KEY = 'test-key';
+      const service = new LucidService();
+
+      global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403, statusText: 'Forbidden' }) as any;
+
+      await expect(service.trashDocument('doc-1')).rejects.toThrow(
+        'Failed to trash document doc-1: HTTP 403 Forbidden'
+      );
+    });
+  });
+
   describe('getDocumentContent', () => {
     it('should successfully get document content', async () => {
       process.env.LUCID_API_KEY = 'test-key';

@@ -1,6 +1,7 @@
 // src/services/lucidService.ts
 // Lucid API service using official SDK
 
+import { zipSync, strToU8 } from 'fflate';
 import lucidDeveloperDocs from '../../.api/apis/lucid-developer-docs/index.js';
 import { log } from '../utils/logger.js';
 
@@ -8,6 +9,15 @@ export interface LucidImageExport {
   base64: string;
   contentType: string;
   size: number;
+}
+
+export interface LucidDocumentCreated {
+  documentId: string;
+  title: string;
+  editUrl: string;
+  viewUrl: string;
+  version?: number;
+  pageCount?: number;
 }
 
 export class LucidService {
@@ -168,6 +178,110 @@ export class LucidService {
     } catch (error: any) {
       log.error('PNG export failed:', error);
       throw new Error(`Failed to export document ${documentId} as PNG: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create a new document from a Lucid Standard Import JSON specification.
+   *
+   * The Standard Import endpoint expects a `.lucid` file: a zip archive containing
+   * a `document.json` at its root. Lucid reads the import type from the uploaded
+   * file part's Content-Type header (`x-application/vnd.lucid.standardImport`), NOT
+   * from a form field, so the multipart file part must carry that content type.
+   */
+  async createDocumentFromStandardImport(
+    standardImportJson: string,
+    title: string,
+    product: string = 'lucidchart',
+    parent?: number
+  ): Promise<LucidDocumentCreated> {
+    if (!standardImportJson || !standardImportJson.trim()) {
+      throw new Error('standardImportJson is required');
+    }
+    if (!title || !title.trim()) {
+      throw new Error('title is required');
+    }
+    // Fail fast with a clear message instead of a 400 from Lucid on malformed JSON
+    try {
+      JSON.parse(standardImportJson);
+    } catch (e: any) {
+      throw new Error(`standardImportJson is not valid JSON: ${e.message}`);
+    }
+
+    log.debug('Creating document via Standard Import:', { title, product });
+
+    try {
+      // A .lucid file is a zip archive with document.json at the root
+      const archive = zipSync({ 'document.json': strToU8(standardImportJson) });
+      const blob = new Blob([archive], { type: 'x-application/vnd.lucid.standardImport' });
+
+      const form = new FormData();
+      // The file part's content type is what Lucid uses to pick the import type
+      form.append('file', blob, 'diagram.lucid');
+      form.append('product', product);
+      form.append('title', title);
+      if (parent !== undefined) {
+        form.append('parent', String(parent));
+      }
+
+      // Let fetch set the multipart boundary; do NOT set Content-Type manually
+      const response = await fetch('https://api.lucid.co/documents', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Lucid-Api-Version': '1',
+        },
+        body: form,
+      });
+
+      if (!response.ok) {
+        let detail = `HTTP ${response.status} ${response.statusText}`;
+        try {
+          const body = await response.text();
+          if (body) detail += ` - ${body}`;
+        } catch {
+          // ignore body read failures
+        }
+        throw new Error(detail);
+      }
+
+      const data = await response.json();
+      log.debug('Standard Import create response:', { documentId: data.documentId });
+      return data;
+    } catch (error: any) {
+      log.error('Standard Import create failed:', error);
+      throw new Error(`Failed to create document: ${error.message}`);
+    }
+  }
+
+  /**
+   * Move a document to the trash.
+   *
+   * Note: this trashes the ENTIRE document, not individual shapes. The REST API
+   * has no shape-level delete and no in-place content edit. Returns 204 on success.
+   */
+  async trashDocument(documentId: string): Promise<void> {
+    if (!documentId) {
+      throw new Error('Document ID is required');
+    }
+
+    log.debug('Trashing document:', { documentId });
+
+    try {
+      const response = await fetch(`https://api.lucid.co/documents/${documentId}/trash`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Lucid-Api-Version': '1',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
+      }
+    } catch (error: any) {
+      log.error('Trash document failed:', error);
+      throw new Error(`Failed to trash document ${documentId}: ${error.message}`);
     }
   }
 }

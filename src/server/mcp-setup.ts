@@ -6,7 +6,11 @@ import {
   searchDocumentsSchema,
   searchDocumentsHandler,
   getDocumentTabsSchema,
-  getDocumentTabsHandler
+  getDocumentTabsHandler,
+  createDiagramSchema,
+  createDiagramHandler,
+  deleteDiagramSchema,
+  deleteDiagramHandler
 } from "../tools/index.js";
 import { log } from "../utils/logger.js";
 
@@ -49,6 +53,20 @@ export function createMcpServer(version: string): McpServer {
     "Get metadata about all tabs (pages) in a Lucid document. Returns compact JSON with document info and page metadata (id, title, index) only - excludes shapes, lines, and other content.",
     getDocumentTabsSchema,
     getDocumentTabsHandler
+  );
+
+  server.tool(
+    "create-diagram",
+    "Create a new Lucid diagram from Standard Import JSON. Author JSON describing pages, shapes, and lines (no Mermaid); the document is created in your Lucid account and the edit URL is returned. Use for flowcharts, org charts, UML, BPMN, and cloud architecture diagrams.",
+    createDiagramSchema,
+    createDiagramHandler
+  );
+
+  server.tool(
+    "delete-diagram",
+    "Delete a Lucid document by moving it to the trash. This removes the ENTIRE document (there is no shape-level delete or in-place edit in the API). Useful for cleanup or the create-new-then-trash-old pattern.",
+    deleteDiagramSchema,
+    deleteDiagramHandler
   );
 
   return server;

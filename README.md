@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/lucid-mcp-server.svg)](https://www.npmjs.com/package/lucid-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Model Context Protocol (MCP) server for Lucid App integration. Exports Lucid diagrams as images so a vision-capable client can interpret them.
+Model Context Protocol (MCP) server for Lucid App integration. Exports Lucid diagrams as images so a vision-capable client can interpret them, and creates new diagrams from Lucid Standard Import JSON.
 
 ## Table of Contents
 - [Features](#features)
@@ -22,6 +22,8 @@ Model Context Protocol (MCP) server for Lucid App integration. Exports Lucid dia
 - 🔍 **Document discovery** and metadata retrieval from LucidChart, LucidSpark, and LucidScale
 - 📑 **Lightweight tab metadata** for quick document structure overview
 - 🖼️ **PNG image export** from Lucid diagrams, returned as an image content block for a vision-capable client to interpret
+- ✏️ **Diagram creation** from Lucid Standard Import JSON (flowcharts, org charts, UML, BPMN, cloud architecture), with assisted layout
+- 🗑️ **Document deletion** (move to trash)
 - 📝 **TypeScript implementation** with full test coverage
 - 🔧 **MCP Inspector integration** for easy testing
 
@@ -31,8 +33,12 @@ The server is a thin bridge to the Lucid REST API. It does **not** run any LLM o
 
 - `search-documents` and `get-document-tabs` return JSON metadata from the Lucid API.
 - `get-document` with `analyzeImage: true` exports the requested page as a PNG and returns it as an MCP `image` content block.
+- `create-diagram` packages the Lucid Standard Import JSON you provide into a `.lucid` archive and creates a new document via the Lucid API.
+- `delete-diagram` moves a document to the trash.
 
-Diagram interpretation is delegated entirely to the model already driving your MCP client. This keeps the server free of any AI-provider dependency and reuses the (typically more capable) model running your session instead of a second, separately configured one.
+Diagram interpretation is delegated entirely to the model already driving your MCP client. This keeps the server free of any AI-provider dependency and reuses the (typically more capable) model running your session instead of a second, separately configured one. Likewise, the Standard Import JSON for `create-diagram` is authored by your session model, so the server needs no diagram-generation logic of its own.
+
+> Creating and deleting documents require a Lucid API key with document edit (write) scope. A read-only key can still search, read, and export. There is no in-place content editing in the Lucid REST API: to change a diagram, create a new one (optionally deleting the old). The exported JSON format and the Standard Import format are not interchangeable, so there is no download-edit-reupload round trip.
 
 > Earlier versions (≤ 0.1.x) shipped a built-in image-analysis backend (Azure OpenAI / OpenAI) that returned a text description. Modern MCP clients forward image content directly to vision-capable models, making that second model redundant, so it was removed. The `analyzeImage` parameter name is kept for compatibility; it now simply toggles PNG export.
 
@@ -57,8 +63,8 @@ If `get-document` returns an image but the model replies that it cannot see it, 
 
 Before you begin, ensure you have the following:
 
-- **Node.js**: Version 18 or higher.
-- **Lucid API Key**: A key from the [Lucid Developer Portal](https://developer.lucid.co/docs/api-keys) is **required** for all features.
+- **Node.js**: Version 22 or higher.
+- **Lucid API Key**: A key from the [Lucid Developer Portal](https://developer.lucid.co/docs/api-keys) is **required** for all features. Reading and exporting work with a read-only key; creating and deleting documents need a key with document edit (write) scope.
 - **Vision-capable client**: To interpret exported diagram images, use an MCP client backed by a vision-capable model. The server does not analyze images itself; it returns the raw PNG.
 
 ## Installation
@@ -153,6 +159,34 @@ Gets lightweight metadata about all tabs (pages) in a Lucid document without ret
   ```json
   {
     "documentId": "demo-document-id-here-12345678/edit"
+  }
+  ```
+
+#### ✏️ `create-diagram`
+Creates a new Lucid document from Lucid Standard Import JSON. Requires an API key with edit (write) scope. The session model authors the JSON describing pages, shapes, and lines; the tool packages it into a `.lucid` archive and creates the document, returning the edit URL.
+
+- **Parameters:**
+  - `title` (string): Title for the new document.
+  - `standardImportJson` (string): The Standard Import `document.json` contents. The parameter description embeds a compact authoring guide (shape types, line endpoints, assisted layout).
+  - `product` (string, optional): `lucidchart` (default) or `lucidspark`.
+  - `parent` (number, optional): Lucid folder ID to create the document in.
+- **Example:**
+  ```json
+  {
+    "title": "Login flow",
+    "standardImportJson": "{\"version\":1,\"pages\":[{\"id\":\"p1\",\"shapes\":[{\"id\":\"s1\",\"type\":\"terminator\",\"boundingBox\":{\"x\":0,\"y\":0,\"w\":160,\"h\":60},\"text\":\"Start\"}]}]}"
+  }
+  ```
+
+#### 🗑️ `delete-diagram`
+Deletes a Lucid document by moving it to the trash. Requires an API key with edit (write) scope. This removes the whole document; there is no shape-level delete.
+
+- **Parameters:**
+  - `documentId` (string): The ID of the document to trash, from the Lucid URL.
+- **Example:**
+  ```json
+  {
+    "documentId": "demo-document-id-here-12345678"
   }
   ```
 
