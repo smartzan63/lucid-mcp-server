@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/smartzan63-lucid-mcp-server-badge.png)](https://mseep.ai/app/smartzan63-lucid-mcp-server)
+
 # Lucid MCP Server
 
 [![npm version](https://img.shields.io/npm/v/lucid-mcp-server.svg)](https://www.npmjs.com/package/lucid-mcp-server)
